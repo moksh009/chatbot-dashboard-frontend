@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import io from 'socket.io-client';
+import api from '../api/axios';
 import { useAuth } from './AuthContext';
 
 const SocketContext = createContext();
@@ -10,8 +11,19 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user && user.clientId) {
-      const url = import.meta.env.VITE_SOCKET_URL 
-        || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+      let url = import.meta.env.VITE_SOCKET_URL;
+      if (!url) {
+        const base = api?.defaults?.baseURL;
+        if (base) {
+          try {
+            url = new URL(base).origin;
+          } catch {
+            url = base.replace(/\/api$/, '');
+          }
+        } else {
+          url = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+        }
+      }
       const newSocket = io(url, {
         query: { clientId: user.clientId }
       });
@@ -24,10 +36,10 @@ export const SocketProvider = ({ children }) => {
 
       return () => newSocket.close();
     } else {
-        if(socket) {
-            socket.close();
-            setSocket(null);
-        }
+      if (socket) {
+        socket.close();
+        setSocket(null);
+      }
     }
   }, [user]);
 
