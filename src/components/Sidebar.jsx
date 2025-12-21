@@ -25,15 +25,13 @@ const Sidebar = () => {
     { path: '/analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
-  if (user?.role === 'SUPER_ADMIN') {
-    navItems.push({ path: '/clients', label: 'Clients', icon: Users });
-  }
+  // Clients page removed
 
   const DesktopSidebar = () => (
     <div className="hidden md:flex w-72 h-screen sticky top-0 flex-col bg-slate-950/95 backdrop-blur-xl text-white shadow-2xl border-r border-white/5 z-50">
       <div className="p-6">
         <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent tracking-tight">
-          Admin Panel
+          TopEdge AI
         </h1>
         <p className="text-xs text-slate-500 mt-1 font-medium">{user?.email}</p>
       </div>

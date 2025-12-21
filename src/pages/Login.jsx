@@ -84,9 +84,9 @@ const Login = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-3xl font-bold text-white mb-2 tracking-tight"
+            className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent mb-2 tracking-tight"
           >
-            Welcome Back
+            TopEdge AI
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0 }}

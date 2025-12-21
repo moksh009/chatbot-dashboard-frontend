@@ -8,7 +8,7 @@ import Appointments from './Appointments';
 import Analytics from './Analytics';
 import CampaignManager from './CampaignManager';
 import PageTransition from '../components/ui/PageTransition';
-import { Bell, Search, User } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 const Dashboard = () => {
   const location = useLocation();
@@ -22,30 +22,18 @@ const Dashboard = () => {
         <div className="px-4 py-3 md:px-8 md:py-4 z-20 shrink-0">
           <div className="bg-slate-900/50 backdrop-blur-xl border border-white/5 rounded-2xl p-3 flex items-center justify-between shadow-lg">
             <div className="flex items-center gap-4">
-              {/* Mobile Brand */}
-              <div className="md:hidden font-bold text-lg bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
-                Admin
-              </div>
-              
-              {/* Search Bar (Desktop) */}
-              <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-slate-950/50 rounded-xl border border-white/5 w-64 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
-                <Search size={16} className="text-slate-500" />
-                <input 
-                  type="text" 
-                  placeholder="Search..." 
-                  className="bg-transparent border-none outline-none text-sm text-slate-200 placeholder:text-slate-600 w-full"
-                />
+              <div className="font-bold text-lg bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+                TopEdge AI
               </div>
             </div>
-
-            <div className="flex items-center gap-3">
-              <button className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors relative">
-                <Bell size={20} />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full border-2 border-slate-900"></span>
-              </button>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-blue-500/20">
-                <User size={14} />
-              </div>
+            <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-slate-950/50 rounded-xl border border-white/5 w-64 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
+              <Search size={16} className="text-slate-500" />
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                className="bg-transparent border-none outline-none text-sm text-slate-200 placeholder:text-slate-600 w-full"
+                readOnly
+              />
             </div>
           </div>
         </div>

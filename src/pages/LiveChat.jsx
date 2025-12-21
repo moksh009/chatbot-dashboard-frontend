@@ -12,9 +12,7 @@ import {
   ArrowLeft,
   MessageSquare,
   Clock,
-  MoreVertical,
-  Phone,
-  Video
+  MoreVertical
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
@@ -32,6 +30,8 @@ const LiveChat = () => {
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [dateFilter, setDateFilter] = useState('');
+  
+  const normalizeDigits = (val) => (val || '').replace(/\D/g, '');
   
   const socket = useSocket();
   const { user } = useAuth();
@@ -113,10 +113,14 @@ const LiveChat = () => {
     if (!newMessage.trim() || !selectedConversation) return;
 
     try {
-      await api.post(`/conversations/${selectedConversation._id}/messages`, {
+      const res = await api.post(`/conversations/${selectedConversation._id}/messages`, {
         content: newMessage,
       });
       setNewMessage('');
+      if (res?.data) {
+        setMessages((prev) => [...prev, res.data]);
+        scrollToBottom();
+      }
     } catch (err) {
       console.error('Error sending message:', err);
     }
@@ -146,9 +150,15 @@ const LiveChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const filteredConversations = conversations.filter(c => 
-    (c.phone || '').includes(searchTerm) || (c.lastMessage || '').toLowerCase().includes(searchTerm.toLowerCase())
-  ).filter(c => {
+  const filteredConversations = conversations.filter(c => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return true;
+    const phoneDigits = normalizeDigits(c.phone);
+    const termDigits = normalizeDigits(term);
+    const matchPhone = termDigits ? phoneDigits.includes(termDigits) : false;
+    const matchMsg = (c.lastMessage || '').toLowerCase().includes(term);
+    return matchPhone || matchMsg;
+  }).filter(c => {
     if (!dateFilter) return true;
     const days = parseInt(dateFilter, 10);
     if (isNaN(days)) return true;
@@ -329,15 +339,6 @@ const LiveChat = () => {
               </div>
               
               <div className="flex items-center gap-2">
-                <div className="hidden sm:flex gap-1">
-                  <button className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors">
-                    <Phone size={18} />
-                  </button>
-                  <button className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors">
-                    <Video size={18} />
-                  </button>
-                </div>
-                
                 <div className="h-6 w-px bg-white/10 mx-2" />
                 
                 {selectedConversation.status === 'BOT_ACTIVE' ? (
