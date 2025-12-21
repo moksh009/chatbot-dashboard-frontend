@@ -31,6 +31,7 @@ const LiveChat = () => {
   const [isMobileListVisible, setIsMobileListVisible] = useState(true);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [dateFilter, setDateFilter] = useState('');
   
   const socket = useSocket();
   const { user } = useAuth();
@@ -146,8 +147,16 @@ const LiveChat = () => {
   };
 
   const filteredConversations = conversations.filter(c => 
-    c.phone.includes(searchTerm) || c.lastMessage?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    (c.phone || '').includes(searchTerm) || (c.lastMessage || '').toLowerCase().includes(searchTerm.toLowerCase())
+  ).filter(c => {
+    if (!dateFilter) return true;
+    const days = parseInt(dateFilter, 10);
+    if (isNaN(days)) return true;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const last = c.lastMessageAt ? new Date(c.lastMessageAt) : null;
+    return last && last >= cutoff;
+  });
 
   return (
     <div className="h-[calc(100vh-140px)] md:h-[calc(100vh-100px)] flex flex-col md:flex-row gap-4 overflow-hidden">

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL 
-    || (typeof window !== 'undefined' ? `${window.location.origin}/api` : 'http://localhost:3000/api'), 
+    ||'http://localhost:3000/api', 
 });
 
 api.interceptors.request.use((config) => {
@@ -12,5 +12,22 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    if (status === 401 || status === 403) {
+      try {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } catch {}
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;
