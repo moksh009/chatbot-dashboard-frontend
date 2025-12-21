@@ -36,6 +36,7 @@ const LiveChat = () => {
   const socket = useSocket();
   const { user } = useAuth();
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   // ... (Keep existing socket and api logic)
   useEffect(() => {
@@ -65,7 +66,6 @@ const LiveChat = () => {
       socket.on('new_message', (message) => {
         if (selectedConversation && message.conversationId === selectedConversation._id) {
           setMessages((prev) => [...prev, message]);
-          scrollToBottom();
         }
       });
 
@@ -77,11 +77,12 @@ const LiveChat = () => {
   }, [socket, selectedConversation]);
 
   useEffect(() => {
-    if (selectedConversation) {
-      fetchMessages(selectedConversation._id);
+    const id = selectedConversation?._id;
+    if (id) {
+      fetchMessages(id);
       setIsMobileListVisible(false);
     }
-  }, [selectedConversation]);
+  }, [selectedConversation?._id]);
 
   const fetchConversations = async () => {
     try {
@@ -149,6 +150,19 @@ const LiveChat = () => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+  
+  const isNearBottom = () => {
+    const el = messagesContainerRef.current;
+    if (!el) return true;
+    const threshold = 120;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+  };
+  
+  useEffect(() => {
+    if (isNearBottom()) {
+      scrollToBottom();
+    }
+  }, [messages]);
 
   const filteredConversations = conversations.filter(c => {
     const term = searchTerm.trim().toLowerCase();
@@ -364,7 +378,7 @@ const LiveChat = () => {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-slate-950/30">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-slate-950/30">
               {loadingMessages ? (
                  <div className="space-y-6">
                     {[...Array(5)].map((_, i) => (
@@ -379,7 +393,7 @@ const LiveChat = () => {
                     <motion.div
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      key={index}
+                      key={msg._id || msg.messageId || index}
                       className={clsx(
                         "flex w-full",
                         msg.direction === 'outgoing' ? 'justify-end' : 'justify-start'

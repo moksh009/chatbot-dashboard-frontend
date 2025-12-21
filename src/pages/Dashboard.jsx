@@ -9,9 +9,11 @@ import Analytics from './Analytics';
 import CampaignManager from './CampaignManager';
 import PageTransition from '../components/ui/PageTransition';
 import { Search } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
   const location = useLocation();
+  const { user } = useAuth();
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30">
@@ -23,17 +25,8 @@ const Dashboard = () => {
           <div className="bg-slate-900/50 backdrop-blur-xl border border-white/5 rounded-2xl p-3 flex items-center justify-between shadow-lg">
             <div className="flex items-center gap-4">
               <div className="font-bold text-lg bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
-                TopEdge AI
+                {user?.clientId || 'Client'}
               </div>
-            </div>
-            <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-slate-950/50 rounded-xl border border-white/5 w-64 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all">
-              <Search size={16} className="text-slate-500" />
-              <input 
-                type="text" 
-                placeholder="Search..." 
-                className="bg-transparent border-none outline-none text-sm text-slate-200 placeholder:text-slate-600 w-full"
-                readOnly
-              />
             </div>
           </div>
         </div>
