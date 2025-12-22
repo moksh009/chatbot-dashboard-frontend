@@ -34,8 +34,10 @@ const Analytics = () => {
     chats: acc.chats + (curr.totalChats || 0),
     users: acc.users + (curr.uniqueUsers || 0),
     appointments: acc.appointments + (curr.appointmentsBooked || 0),
-    messages: acc.messages + (curr.totalMessagesExchanged || 0)
-  }), { chats: 0, users: 0, appointments: 0, messages: 0 });
+    messages: acc.messages + (curr.totalMessagesExchanged || 0),
+    birthdays: acc.birthdays + (curr.birthdayRemindersSent || 0),
+    apptReminders: acc.apptReminders + (curr.appointmentRemindersSent || 0)
+  }), { chats: 0, users: 0, appointments: 0, messages: 0, birthdays: 0, apptReminders: 0 });
 
   const metrics = [
     {
@@ -76,6 +78,26 @@ const Analytics = () => {
       bg: 'bg-purple-500/10',
       border: 'border-purple-500/20',
       trend: '+24.3%',
+      trendUp: true
+    },
+    {
+      label: 'Birthday Wishes',
+      value: totals.birthdays,
+      icon: Calendar,
+      color: 'text-pink-400',
+      bg: 'bg-pink-500/10',
+      border: 'border-pink-500/20',
+      trend: '+0.0%',
+      trendUp: true
+    },
+    {
+      label: 'Appointment Reminders',
+      value: totals.apptReminders,
+      icon: Clock,
+      color: 'text-amber-400',
+      bg: 'bg-amber-500/10',
+      border: 'border-amber-500/20',
+      trend: '+0.0%',
       trendUp: true
     }
   ];
@@ -121,10 +143,14 @@ const Analytics = () => {
           <p className="text-slate-400">Performance metrics for the last 30 days</p>
         </div>
         <div className="flex items-center gap-2">
-          <select className="bg-slate-900 border border-white/10 text-slate-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none">
-            <option>Last 30 Days</option>
-            <option>Last 7 Days</option>
-            <option>This Month</option>
+          <select 
+            className="bg-slate-900 border border-white/10 text-slate-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none"
+            value={days}
+            onChange={(e) => setDays(parseInt(e.target.value, 10))}
+          >
+            <option value={7}>Last 7 Days</option>
+            <option value={28}>Last 28 Days</option>
+            <option value={30}>Last 30 Days</option>
           </select>
         </div>
       </div>

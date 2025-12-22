@@ -37,6 +37,7 @@ const LiveChat = () => {
   const { user } = useAuth();
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const messageIdsRef = useRef(new Set());
 
   // ... (Keep existing socket and api logic)
   useEffect(() => {
@@ -65,7 +66,13 @@ const LiveChat = () => {
 
       socket.on('new_message', (message) => {
         if (selectedConversation && message.conversationId === selectedConversation._id) {
+          const key = message._id || message.messageId;
+          if (key && messageIdsRef.current.has(key)) return;
+          if (key) messageIdsRef.current.add(key);
           setMessages((prev) => [...prev, message]);
+          if (isNearBottom()) {
+            scrollToBottom();
+          }
         }
       });
 
@@ -101,7 +108,12 @@ const LiveChat = () => {
       setLoadingMessages(true);
       const res = await api.get(`/conversations/${id}/messages`);
       setMessages(res.data);
-      scrollToBottom();
+      messageIdsRef.current.clear();
+      for (const m of res.data) {
+        if (m._id) messageIdsRef.current.add(m._id);
+        if (m.messageId) messageIdsRef.current.add(m.messageId);
+      }
+      scrollToBottom(true);
     } catch (err) {
       console.error('Error fetching messages:', err);
     } finally {
@@ -119,7 +131,11 @@ const LiveChat = () => {
       });
       setNewMessage('');
       if (res?.data) {
-        setMessages((prev) => [...prev, res.data]);
+        const key = res.data._id || res.data.messageId;
+        if (key && !messageIdsRef.current.has(key)) {
+          messageIdsRef.current.add(key);
+          setMessages((prev) => [...prev, res.data]);
+        }
         scrollToBottom();
       }
     } catch (err) {
@@ -147,8 +163,9 @@ const LiveChat = () => {
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (immediate = false) => {
+    const behavior = immediate ? 'auto' : 'smooth';
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
   
   const isNearBottom = () => {

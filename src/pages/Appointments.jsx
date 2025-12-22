@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
+import { useSocket } from '../context/SocketContext';
 import { Calendar, Clock, User, Stethoscope, Trash2, Search, Filter, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
@@ -18,10 +19,20 @@ const Appointments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState(null);
+  const socket = useSocket();
 
   useEffect(() => {
     fetchAppointments();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handler = () => fetchAppointments();
+    socket.on('appointments_update', handler);
+    return () => {
+      socket.off('appointments_update', handler);
+    };
+  }, [socket]);
 
   const fetchAppointments = async () => {
     try {

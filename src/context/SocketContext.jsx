@@ -24,8 +24,17 @@ export const SocketProvider = ({ children }) => {
           url = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
         }
       }
+      try {
+        fetch(`${url}/keepalive-ping`, { method: 'POST' }).catch(() => {});
+      } catch {}
       const newSocket = io(url, {
-        query: { clientId: user.clientId }
+        path: '/socket.io',
+        transports: ['websocket'],
+        query: { clientId: user.clientId },
+        timeout: 10000,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 500,
+        reconnectionDelayMax: 2000
       });
       
       newSocket.on('connect', () => {

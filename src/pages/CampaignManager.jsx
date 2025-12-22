@@ -6,6 +6,7 @@ import Button from '../components/ui/Button';
 import Skeleton from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import clsx from 'clsx';
+import api from '../api/axios';
 
 const CampaignManager = () => {
   const [dragActive, setDragActive] = useState(false);
@@ -15,6 +16,10 @@ const CampaignManager = () => {
   const [status, setStatus] = useState('idle'); // idle, uploading, success, error
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [recentUploads, setRecentUploads] = useState([]);
+  const [campaign, setCampaign] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState('birthday'); // 'birthday' | 'appointment'
+  const [starting, setStarting] = useState(false);
+  const [startResult, setStartResult] = useState(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -68,21 +73,48 @@ const CampaignManager = () => {
 
   const handleUpload = async () => {
     if (!file) return;
-    setUploading(true);
-    setStatus('uploading');
-    
-    // Simulate upload progress
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += Math.random() * 10;
-      if (currentProgress > 100) {
-        currentProgress = 100;
-        clearInterval(interval);
-        setUploading(false);
-        setStatus('success');
-      }
-      setProgress(currentProgress);
-    }, 200);
+    try {
+      setUploading(true);
+      setStatus('uploading');
+      setProgress(0);
+      setStartResult(null);
+      const form = new FormData();
+      form.append('file', file);
+      form.append('name', file.name.replace('.csv',''));
+      form.append('templateName', 'unspecified');
+      const resp = await api.post('/campaigns', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (evt) => {
+          const pct = Math.round((evt.loaded * 100) / (evt.total || file.size));
+          setProgress(pct);
+        }
+      });
+      setCampaign(resp.data);
+      setStatus('success');
+    } catch (err) {
+      setStatus('error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleStartCampaign = async () => {
+    if (!campaign) return;
+    try {
+      setStarting(true);
+      setStartResult(null);
+      const resp = await api.post('/campaigns/start', {
+        campaignId: campaign._id || campaign.id,
+        templateType: selectedTemplate
+      });
+      setStartResult(resp.data);
+      // Refresh campaign stats client side
+      setCampaign({ ...campaign, status: resp.data.status, stats: { ...(campaign.stats||{}), sent: resp.data.sent }, audienceCount: resp.data.total });
+    } catch (err) {
+      setStartResult({ success: false, error: err?.response?.data?.message || 'Failed to start campaign' });
+    } finally {
+      setStarting(false);
+    }
   };
 
   const removeFile = () => {
@@ -195,7 +227,7 @@ const CampaignManager = () => {
           </Card>
 
           {/* Validation Report */}
-          {status === 'success' && (
+          {status === 'success' && campaign && (
              <motion.div
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
@@ -206,22 +238,53 @@ const CampaignManager = () => {
                       <CheckCircle size={20} />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-white">Validation Successful</h3>
+                      <h3 className="font-semibold text-white">CSV Uploaded</h3>
                       <p className="text-sm text-slate-400">Ready to launch campaign</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-4 border-t border-white/5 pt-4">
                     <div className="text-center">
                       <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Total Rows</p>
-                      <p className="text-xl font-bold text-white">1,240</p>
+                      <p className="text-xl font-bold text-white">{campaign.audienceCount || 0}</p>
                     </div>
                     <div className="text-center border-l border-white/5">
                       <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Valid Numbers</p>
-                      <p className="text-xl font-bold text-emerald-400">1,238</p>
+                      <p className="text-xl font-bold text-emerald-400">{campaign.audienceCount || 0}</p>
                     </div>
                     <div className="text-center border-l border-white/5">
                       <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Errors</p>
-                      <p className="text-xl font-bold text-red-400">2</p>
+                      <p className="text-xl font-bold text-red-400">0</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 border-t border-white/5 pt-4 space-y-4">
+                    <div>
+                      <p className="text-sm text-slate-400 mb-2">Select Template</p>
+                      <div className="flex gap-3">
+                        <Button 
+                          variant={selectedTemplate === 'birthday' ? 'primary' : 'ghost'} 
+                          onClick={() => setSelectedTemplate('birthday')}
+                        >
+                          Birthday Wishes
+                        </Button>
+                        <Button 
+                          variant={selectedTemplate === 'appointment' ? 'primary' : 'ghost'} 
+                          onClick={() => setSelectedTemplate('appointment')}
+                        >
+                          Appointment Reminders
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button onClick={handleStartCampaign} disabled={starting}>
+                        <Send size={16} className="mr-2" />
+                        {starting ? 'Starting...' : 'Start Campaign'}
+                      </Button>
+                      {startResult && (
+                        <p className={clsx("text-sm", startResult.success ? "text-emerald-400" : "text-red-400")}>
+                          {startResult.success ? `Sent ${startResult.sent}/${startResult.total}` : (startResult.error || 'Failed')}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </Card>
