@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
-import { Users, MessageSquare, Calendar, TrendingUp, ArrowUp, ArrowDown } from 'lucide-react';
+import { Users, MessageSquare, Calendar, TrendingUp, ArrowUp, ArrowDown, Clock } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Skeleton from '../components/ui/Skeleton';
 import clsx from 'clsx';

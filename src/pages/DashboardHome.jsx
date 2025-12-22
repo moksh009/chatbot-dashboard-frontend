@@ -12,7 +12,9 @@ const DashboardHome = () => {
   const [stats, setStats] = useState({
     appointments: 0,
     activeChats: 0,
-    leads: 0
+    leads: 0,
+    birthdays: 0,
+    apptReminders: 0
   });
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -23,17 +25,21 @@ const DashboardHome = () => {
         // Parallel fetch for dashboard data
         // Note: Using existing endpoints or mocking if specific dashboard endpoint doesn't exist
         // Assuming /analytics exists from Analytics page analysis
-        const analyticsRes = await api.get('/analytics');
+        const analyticsRes = await api.get('/analytics', { params: { days: 28 } });
         const analyticsData = analyticsRes.data;
         
         // Calculate basic stats from analytics data (mock logic based on available data)
         const totalApps = analyticsData.reduce((acc, curr) => acc + (curr.appointmentsBooked || 0), 0);
         const totalChats = analyticsData.reduce((acc, curr) => acc + (curr.totalChats || 0), 0);
         
+        const birthdays = analyticsData.reduce((acc, curr) => acc + (curr.birthdayRemindersSent || 0), 0);
+        const apptReminders = analyticsData.reduce((acc, curr) => acc + (curr.appointmentRemindersSent || 0), 0);
         setStats({
           appointments: totalApps,
-          activeChats: totalChats, // This would ideally be real-time active chats
-          leads: analyticsData.reduce((acc, curr) => acc + (curr.uniqueUsers || 0), 0)
+          activeChats: totalChats,
+          leads: analyticsData.reduce((acc, curr) => acc + (curr.uniqueUsers || 0), 0),
+          birthdays,
+          apptReminders
         });
       } catch (err) {
         console.error("Error fetching dashboard data", err);
@@ -138,6 +144,33 @@ const DashboardHome = () => {
                 <p className="text-slate-400 text-sm">Total Leads</p>
                 <div className="absolute right-0 bottom-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
                   <ArrowRight size={20} className="text-purple-400 -rotate-45" />
+                </div>
+              </Card>
+            </motion.div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div variants={item}>
+              <Card className="relative overflow-hidden group hover:border-pink-500/30 transition-colors">
+                <div className="p-2 w-fit rounded-xl bg-pink-500/10 text-pink-400 mb-4 group-hover:scale-110 transition-transform">
+                  <Calendar size={24} />
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-1">{stats.birthdays}</h3>
+                <p className="text-slate-400 text-sm">Birthday Wishes Sent</p>
+                <div className="absolute right-0 bottom-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ArrowRight size={20} className="text-pink-400 -rotate-45" />
+                </div>
+              </Card>
+            </motion.div>
+            <motion.div variants={item}>
+              <Card className="relative overflow-hidden group hover:border-amber-500/30 transition-colors">
+                <div className="p-2 w-fit rounded-xl bg-amber-500/10 text-amber-400 mb-4 group-hover:scale-110 transition-transform">
+                  <Clock size={24} />
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-1">{stats.apptReminders}</h3>
+                <p className="text-slate-400 text-sm">Appointment Reminders Sent</p>
+                <div className="absolute right-0 bottom-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ArrowRight size={20} className="text-amber-400 -rotate-45" />
                 </div>
               </Card>
             </motion.div>
