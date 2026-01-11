@@ -175,34 +175,38 @@ const EcommerceDashboard = () => {
       >
         {/* LEADS TODAY */}
         <motion.div variants={item}>
-            <Card className="relative overflow-hidden group hover:border-blue-500/50 transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400 group-hover:bg-blue-500/20 transition-colors">
-                        <Users size={24} />
+            <Link to="/analytics">
+                <Card className="relative overflow-hidden group hover:border-blue-500/50 transition-colors cursor-pointer">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400 group-hover:bg-blue-500/20 transition-colors">
+                            <Users size={24} />
+                        </div>
+                        <span className="flex items-center text-xs font-medium text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
+                            +{stats.leads.newToday} Today
+                        </span>
                     </div>
-                    <span className="flex items-center text-xs font-medium text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
-                        +{stats.leads.newToday} Today
-                    </span>
-                </div>
-                <h3 className="text-slate-400 text-sm font-medium">Total Leads</h3>
-                <p className="text-2xl font-bold text-white mt-1">{stats.leads.total}</p>
-            </Card>
+                    <h3 className="text-slate-400 text-sm font-medium">Total Leads</h3>
+                    <p className="text-2xl font-bold text-white mt-1">{stats.leads.total}</p>
+                </Card>
+            </Link>
         </motion.div>
 
         {/* LINK CLICKS */}
         <motion.div variants={item}>
-            <Card className="relative overflow-hidden group hover:border-purple-500/50 transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-purple-500/10 rounded-xl text-purple-400 group-hover:bg-purple-500/20 transition-colors">
-                        <MousePointer size={24} />
+            <Link to="/analytics">
+                <Card className="relative overflow-hidden group hover:border-purple-500/50 transition-colors cursor-pointer">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="p-3 bg-purple-500/10 rounded-xl text-purple-400 group-hover:bg-purple-500/20 transition-colors">
+                            <MousePointer size={24} />
+                        </div>
+                        <span className="flex items-center text-xs font-medium text-purple-400 bg-purple-500/10 px-2 py-1 rounded-full">
+                            Live
+                        </span>
                     </div>
-                    <span className="flex items-center text-xs font-medium text-purple-400 bg-purple-500/10 px-2 py-1 rounded-full">
-                        Live
-                    </span>
-                </div>
-                <h3 className="text-slate-400 text-sm font-medium">Buy Link Clicks</h3>
-                <p className="text-2xl font-bold text-white mt-1">{stats.linkClicks}</p>
-            </Card>
+                    <h3 className="text-slate-400 text-sm font-medium">Buy Link Clicks</h3>
+                    <p className="text-2xl font-bold text-white mt-1">{stats.linkClicks}</p>
+                </Card>
+            </Link>
         </motion.div>
 
         {/* ADD TO CARTS */}
@@ -250,9 +254,11 @@ const EcommerceDashboard = () => {
         <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold text-white">Recent Active Leads</h2>
-                <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300">
-                    View All <ArrowRight size={16} className="ml-2" />
-                </Button>
+                <Link to="/analytics">
+                    <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300">
+                        View All <ArrowRight size={16} className="ml-2" />
+                    </Button>
+                </Link>
             </div>
             <div className="space-y-4">
                  {recentLeads.length === 0 ? (
