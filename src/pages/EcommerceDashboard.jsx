@@ -14,6 +14,7 @@ const SOCKET_URL = 'http://localhost:3000';
 const EcommerceDashboard = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     leads: { total: 0, newToday: 0 },
     orders: { count: 0, revenue: 0 },
@@ -34,7 +35,17 @@ const EcommerceDashboard = () => {
       setLoading(false);
     } catch (err) {
       console.error("Failed to load dashboard data", err);
+      setError("Failed to connect to the server. Please check your connection.");
       setLoading(false);
+    }
+  };
+
+  const fetchRealtimeStats = async () => {
+    try {
+      const res = await api.get('/analytics/realtime');
+      setStats(res.data);
+    } catch (err) {
+      console.error("Failed to refresh stats", err);
     }
   };
 
@@ -49,18 +60,18 @@ const EcommerceDashboard = () => {
     newSocket.on('stats_update', (data) => {
       if (data.type === 'link_click') {
         setStats(prev => ({ ...prev, linkClicks: prev.linkClicks + 1 }));
+        fetchRealtimeStats();
       } else if (data.type === 'agent_request') {
         setStats(prev => ({ ...prev, agentRequests: prev.agentRequests + 1 }));
+        fetchRealtimeStats();
       } else if (data.type === 'lead_activity') {
         setRecentLeads(prev => {
            // Remove if exists then add to top
            const filtered = prev.filter(l => l._id !== data.lead._id);
            return [data.lead, ...filtered].slice(0, 5);
         });
-        // We could also refetch stats here to be accurate, or optimistically update
-        // For now, let's refetch stats every minute or so, or just increment generic counters if we knew them.
-        // Since 'lead_activity' fires on every message, we shouldn't increment 'total leads' blindly.
-        // Let's just update the list.
+        // Refresh stats to update total leads count
+        fetchRealtimeStats();
       }
     });
 
@@ -96,6 +107,23 @@ const EcommerceDashboard = () => {
           ))}
         </div>
       )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
+        <div className="p-4 bg-red-500/10 rounded-full text-red-400">
+            <TrendingUp size={32} className="transform rotate-180" />
+        </div>
+        <div>
+            <h3 className="text-xl font-bold text-white mb-2">Oops! Something went wrong</h3>
+            <p className="text-slate-400 max-w-md mx-auto">{error}</p>
+        </div>
+        <Button onClick={() => { setError(null); setLoading(true); fetchDashboardData(); }}>
+            Try Again
+        </Button>
+      </div>
+    );
   }
 
   return (

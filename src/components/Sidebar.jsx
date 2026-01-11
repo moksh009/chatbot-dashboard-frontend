@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -10,13 +10,35 @@ import {
   LogOut, 
   Menu,
   Send,
-  ShoppingBag
+  ShoppingBag,
+  Phone,
+  Clock
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
+import api from '../api/axios';
+import { formatDistanceToNow } from 'date-fns';
 
 const Sidebar = () => {
   const { logout, user } = useAuth();
+  const [recentLeads, setRecentLeads] = useState([]);
+
+  useEffect(() => {
+    const fetchLeads = async () => {
+      if (!user) return;
+      try {
+        const res = await api.get('/analytics/leads?limit=3');
+        setRecentLeads(res.data.leads || []);
+      } catch (err) {
+        console.error("Failed to fetch sidebar leads", err);
+      }
+    };
+    fetchLeads();
+    
+    // Optional: Poll for updates every 30s
+    const interval = setInterval(fetchLeads, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const allNavItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -86,6 +108,45 @@ const Sidebar = () => {
           </NavLink>
         ))}
       </nav>
+
+      {/* Recent Leads Section */}
+      <div className="px-4 py-3 mx-4 mb-2 bg-slate-900/50 rounded-xl border border-white/5">
+        <div className="flex items-center gap-2 mb-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <Users size={12} />
+            <span>Active Leads</span>
+        </div>
+        <div className="space-y-3">
+            {recentLeads.length > 0 ? (
+                recentLeads.map((lead) => (
+                    <div key={lead._id} className="group relative">
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 text-blue-400 mb-0.5">
+                                    <Phone size={10} />
+                                    <span className="text-xs font-medium truncate">{lead.phoneNumber}</span>
+                                </div>
+                                <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed group-hover:text-slate-400 transition-colors">
+                                    {lead.chatSummary || "New lead detected via WhatsApp"}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-1 text-[9px] text-slate-600 whitespace-nowrap">
+                                <Clock size={8} />
+                                <span>
+                                    {lead.lastInteraction 
+                                        ? formatDistanceToNow(new Date(lead.lastInteraction), { addSuffix: false }).replace('about ', '') + ' ago'
+                                        : 'Just now'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                ))
+            ) : (
+                <div className="text-[10px] text-slate-600 text-center py-2">
+                    Waiting for leads...
+                </div>
+            )}
+        </div>
+      </div>
 
       <div className="p-4 border-t border-white/5">
         <button

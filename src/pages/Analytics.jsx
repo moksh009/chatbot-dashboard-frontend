@@ -49,7 +49,7 @@ const Analytics = () => {
   // E-commerce doesn't have appointments, so we should hide those cards if user is e-commerce.
 
   const { user } = useAuth();
-  const isEcommerce = user?.business_type === 'ecommerce' || true; // Default to ecommerce for this demo if not set
+  const isEcommerce = user?.business_type === 'ecommerce';
 
   const metrics = [
     {
@@ -271,6 +271,10 @@ const Analytics = () => {
                         <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
                         <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
                       </linearGradient>
+                      <linearGradient id="colorAppts" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                     <XAxis 
@@ -307,6 +311,17 @@ const Analytics = () => {
                       fillOpacity={1} 
                       fill="url(#colorMsgs)" 
                     />
+                    {!isEcommerce && (
+                      <Area 
+                        type="monotone" 
+                        dataKey="appointmentsBooked" 
+                        name="Appointments"
+                        stroke="#10b981" 
+                        strokeWidth={2}
+                        fillOpacity={1} 
+                        fill="url(#colorAppts)" 
+                      />
+                    )}
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

@@ -417,16 +417,30 @@ const LiveChat = () => {
                       )}
                     >
                       <div className={clsx(
-                        "max-w-[85%] md:max-w-[70%] rounded-2xl px-5 py-3 shadow-md relative group transition-all",
-                        msg.direction === 'outgoing'
-                          ? "bg-blue-600 text-white rounded-br-none"
-                          : "bg-slate-800 text-slate-200 border border-white/5 rounded-bl-none"
+                        "flex flex-col gap-1 max-w-[85%] md:max-w-[70%]",
+                        msg.direction === 'outgoing' ? "items-end" : "items-start"
                       )}>
-                        <p className="text-sm leading-relaxed">{msg.content}</p>
-                        <span className={clsx(
-                          "text-[10px] absolute -bottom-5 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap",
-                          msg.direction === 'outgoing' ? "right-0 text-slate-500" : "left-0 text-slate-500"
+                        <div className={clsx(
+                          "rounded-2xl px-4 py-2.5 shadow-md relative transition-all",
+                          msg.direction === 'outgoing'
+                            ? "bg-blue-600 text-white rounded-br-sm"
+                            : "bg-slate-800 text-slate-200 border border-white/5 rounded-bl-sm"
                         )}>
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                        </div>
+                        <span className="text-[10px] text-slate-500 flex items-center gap-1.5 px-1 opacity-70">
+                          {msg.direction === 'outgoing' ? (
+                            <>
+                                <span className="font-medium">Bot/Agent</span>
+                                <Bot size={10} /> 
+                            </>
+                          ) : (
+                            <>
+                                <User size={10} />
+                                <span className="font-medium">User</span>
+                            </>
+                          )}
+                          <span className="w-0.5 h-0.5 rounded-full bg-slate-600" />
                           {format(new Date(msg.timestamp || Date.now()), 'h:mm a')}
                         </span>
                       </div>
