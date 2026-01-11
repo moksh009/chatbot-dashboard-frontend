@@ -1,40 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, TrendingUp, Users, DollarSign, ShoppingCart, ArrowRight } from 'lucide-react';
+import { ShoppingBag, TrendingUp, Users, DollarSign, MousePointer, MessageCircle, Phone, ArrowRight } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
-import api from '../api/axios'; // Ensure this points to your backend
+import api from '../api/axios';
 import io from 'socket.io-client';
 
-// Define socket URL based on your environment
-const SOCKET_URL = 'http://localhost:3000'; // Change to your production URL
+const SOCKET_URL = 'http://localhost:3000';
 
 const EcommerceDashboard = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    totalRevenue: 0,
-    orders: 0,
-    abandonedCarts: 0,
-    conversionRate: 0
+    leads: { total: 0, newToday: 0 },
+    orders: { count: 0, revenue: 0 },
+    linkClicks: 0,
+    agentRequests: 0
   });
-  const [recentOrders, setRecentOrders] = useState([]);
+  const [recentLeads, setRecentLeads] = useState([]);
 
   const fetchDashboardData = async () => {
     try {
-      // 1. Get Stats
-      // Note: Adjust URL based on how you mounted the route in index.js
-      // If mounted as /api/client/0002, use that.
-      const statsRes = await api.get('/client/0002/stats'); 
-      setStats(statsRes.data);
-
-      // 2. Get Recent Orders (Limit 3 for dashboard)
-      const ordersRes = await api.get('/client/0002/orders');
-      setRecentOrders(ordersRes.data.slice(0, 3));
+      const [realtimeRes, leadsRes] = await Promise.all([
+        api.get('/analytics/realtime'),
+        api.get('/analytics/leads?limit=5')
+      ]);
       
+      setStats(realtimeRes.data);
+      setRecentLeads(leadsRes.data.leads);
       setLoading(false);
     } catch (err) {
       console.error("Failed to load dashboard data", err);
@@ -47,23 +43,29 @@ const EcommerceDashboard = () => {
 
     // --- REAL-TIME SOCKET CONNECTION ---
     const newSocket = io(SOCKET_URL, {
-      query: { clientId: 'delitech_smarthomes' } // Must match backend room
+      query: { clientId: user?.clientId || 'delitech_smarthomes' }
     });
 
-    // Listen for real-time order updates
-    newSocket.on('new_order', (newOrder) => {
-      // Update stats instantly without refresh
-      setStats(prev => ({
-        ...prev,
-        orders: prev.orders + 1,
-        totalRevenue: prev.totalRevenue + newOrder.amount
-      }));
-      // Add new order to recent list
-      setRecentOrders(prev => [newOrder, ...prev].slice(0, 3));
+    newSocket.on('stats_update', (data) => {
+      if (data.type === 'link_click') {
+        setStats(prev => ({ ...prev, linkClicks: prev.linkClicks + 1 }));
+      } else if (data.type === 'agent_request') {
+        setStats(prev => ({ ...prev, agentRequests: prev.agentRequests + 1 }));
+      } else if (data.type === 'lead_activity') {
+        setRecentLeads(prev => {
+           // Remove if exists then add to top
+           const filtered = prev.filter(l => l._id !== data.lead._id);
+           return [data.lead, ...filtered].slice(0, 5);
+        });
+        // We could also refetch stats here to be accurate, or optimistically update
+        // For now, let's refetch stats every minute or so, or just increment generic counters if we knew them.
+        // Since 'lead_activity' fires on every message, we shouldn't increment 'total leads' blindly.
+        // Let's just update the list.
+      }
     });
 
     return () => newSocket.disconnect();
-  }, []);
+  }, [user]);
 
   const getTimeGreeting = () => {
     const hour = new Date().getHours();
@@ -104,12 +106,12 @@ const EcommerceDashboard = () => {
           <h1 className="text-3xl font-bold text-white tracking-tight">
             {getTimeGreeting()}, {user?.name || 'Merchant'}
           </h1>
-          <p className="text-slate-400 mt-1">Here is your store's performance today.</p>
+          <p className="text-slate-400 mt-1">Real-time performance metrics.</p>
         </div>
         <div className="flex gap-3">
           <Link to="/campaigns">
             <Button className="bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20">
-              <ShoppingBag size={18} className="mr-2" /> New Product Promo
+              <ShoppingBag size={18} className="mr-2" /> New Promo
             </Button>
           </Link>
         </div>
@@ -122,95 +124,97 @@ const EcommerceDashboard = () => {
         animate="show"
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
-        {/* REVENUE */}
-        <motion.div variants={item}>
-            <Card className="relative overflow-hidden group hover:border-blue-500/50 transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-green-500/10 rounded-xl text-green-400 group-hover:bg-green-500/20 transition-colors">
-                        <DollarSign size={24} />
-                    </div>
-                    {/* Placeholder trend logic */}
-                    <span className="flex items-center text-xs font-medium text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
-                        Live <TrendingUp size={12} className="ml-1" />
-                    </span>
-                </div>
-                <h3 className="text-slate-400 text-sm font-medium">Total Revenue</h3>
-                <p className="text-2xl font-bold text-white mt-1">₹{stats.totalRevenue.toLocaleString()}</p>
-            </Card>
-        </motion.div>
-
-        {/* ORDERS */}
+        {/* LEADS TODAY */}
         <motion.div variants={item}>
             <Card className="relative overflow-hidden group hover:border-blue-500/50 transition-colors">
                 <div className="flex justify-between items-start mb-4">
                     <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400 group-hover:bg-blue-500/20 transition-colors">
-                        <ShoppingBag size={24} />
-                    </div>
-                </div>
-                <h3 className="text-slate-400 text-sm font-medium">Total Orders</h3>
-                <p className="text-2xl font-bold text-white mt-1">{stats.orders}</p>
-            </Card>
-        </motion.div>
-
-        {/* ABANDONED */}
-        <motion.div variants={item}>
-            <Card className="relative overflow-hidden group hover:border-blue-500/50 transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-orange-500/10 rounded-xl text-orange-400 group-hover:bg-orange-500/20 transition-colors">
-                        <ShoppingCart size={24} />
-                    </div>
-                </div>
-                <h3 className="text-slate-400 text-sm font-medium">Potential Leads</h3>
-                <p className="text-2xl font-bold text-white mt-1">{stats.abandonedCarts}</p>
-            </Card>
-        </motion.div>
-
-        {/* CONVERSION */}
-        <motion.div variants={item}>
-            <Card className="relative overflow-hidden group hover:border-blue-500/50 transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-purple-500/10 rounded-xl text-purple-400 group-hover:bg-purple-500/20 transition-colors">
                         <Users size={24} />
                     </div>
+                    <span className="flex items-center text-xs font-medium text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
+                        +{stats.leads.newToday} Today
+                    </span>
                 </div>
-                <h3 className="text-slate-400 text-sm font-medium">Conversion Rate</h3>
-                <p className="text-2xl font-bold text-white mt-1">{stats.conversionRate}%</p>
+                <h3 className="text-slate-400 text-sm font-medium">Total Leads</h3>
+                <p className="text-2xl font-bold text-white mt-1">{stats.leads.total}</p>
+            </Card>
+        </motion.div>
+
+        {/* LINK CLICKS */}
+        <motion.div variants={item}>
+            <Card className="relative overflow-hidden group hover:border-purple-500/50 transition-colors">
+                <div className="flex justify-between items-start mb-4">
+                    <div className="p-3 bg-purple-500/10 rounded-xl text-purple-400 group-hover:bg-purple-500/20 transition-colors">
+                        <MousePointer size={24} />
+                    </div>
+                    <span className="flex items-center text-xs font-medium text-purple-400 bg-purple-500/10 px-2 py-1 rounded-full">
+                        Live
+                    </span>
+                </div>
+                <h3 className="text-slate-400 text-sm font-medium">Buy Link Clicks</h3>
+                <p className="text-2xl font-bold text-white mt-1">{stats.linkClicks}</p>
+            </Card>
+        </motion.div>
+
+        {/* AGENT REQUESTS */}
+        <motion.div variants={item}>
+            <Card className="relative overflow-hidden group hover:border-orange-500/50 transition-colors">
+                <div className="flex justify-between items-start mb-4">
+                    <div className="p-3 bg-orange-500/10 rounded-xl text-orange-400 group-hover:bg-orange-500/20 transition-colors">
+                        <Phone size={24} />
+                    </div>
+                </div>
+                <h3 className="text-slate-400 text-sm font-medium">Agent Requests</h3>
+                <p className="text-2xl font-bold text-white mt-1">{stats.agentRequests}</p>
+            </Card>
+        </motion.div>
+
+        {/* REVENUE */}
+        <motion.div variants={item}>
+            <Card className="relative overflow-hidden group hover:border-green-500/50 transition-colors">
+                <div className="flex justify-between items-start mb-4">
+                    <div className="p-3 bg-green-500/10 rounded-xl text-green-400 group-hover:bg-green-500/20 transition-colors">
+                        <DollarSign size={24} />
+                    </div>
+                </div>
+                <h3 className="text-slate-400 text-sm font-medium">Revenue (Today)</h3>
+                <p className="text-2xl font-bold text-white mt-1">₹{stats.orders.revenue.toLocaleString()}</p>
             </Card>
         </motion.div>
       </motion.div>
 
-      {/* Recent Orders Section */}
+      {/* Recent Leads Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold text-white">Recent Orders</h2>
-                <Link to="/orders">
-                    <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300">
-                        View All <ArrowRight size={16} className="ml-2" />
-                    </Button>
-                </Link>
+                <h2 className="text-lg font-bold text-white">Recent Active Leads</h2>
+                <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300">
+                    View All <ArrowRight size={16} className="ml-2" />
+                </Button>
             </div>
             <div className="space-y-4">
-                 {recentOrders.length === 0 ? (
-                     <p className="text-slate-500 text-sm">No orders yet.</p>
+                 {recentLeads.length === 0 ? (
+                     <p className="text-slate-500 text-sm">No leads active yet.</p>
                  ) : (
-                     recentOrders.map((order) => (
-                        <div key={order._id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
+                     recentLeads.map((lead) => (
+                        <div key={lead._id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center">
-                                    <ShoppingBag size={20} className="text-slate-400" />
+                                    <MessageCircle size={20} className="text-slate-400" />
                                 </div>
                                 <div>
-                                    <h4 className="font-medium text-white">Order {order.orderId}</h4>
-                                    <p className="text-sm text-slate-400">{order.items?.length || 1} items • ₹{order.amount}</p>
+                                    <h4 className="font-medium text-white">{lead.phoneNumber}</h4>
+                                    <p className="text-sm text-slate-400 truncate max-w-[200px]">
+                                        {lead.chatSummary || 'Started conversation'}
+                                    </p>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <span className="px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-medium capitalize">
-                                    {order.status}
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${lead.linkClicks > 0 ? 'bg-green-500/10 text-green-400' : 'bg-slate-700 text-slate-400'}`}>
+                                    {lead.linkClicks > 0 ? `${lead.linkClicks} Clicks` : 'Browsing'}
                                 </span>
                                 <p className="text-xs text-slate-500 mt-1">
-                                    {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}
+                                    {new Date(lead.lastInteraction).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}
                                 </p>
                             </div>
                         </div>
@@ -221,11 +225,13 @@ const EcommerceDashboard = () => {
 
          <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold text-white">Abandoned Carts Recovery</h2>
+                <h2 className="text-lg font-bold text-white">Orders Today</h2>
             </div>
              <div className="space-y-4">
-                 {/* This would come from AdLeads that haven't ordered yet */}
-                 <p className="text-slate-500 text-sm">Recovery module coming soon...</p>
+                 <div className="text-center py-8">
+                     <ShoppingBag size={48} className="mx-auto text-slate-700 mb-4" />
+                     <p className="text-slate-500">No orders placed today yet.</p>
+                 </div>
             </div>
         </Card>
       </div>

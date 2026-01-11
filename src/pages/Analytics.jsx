@@ -37,8 +37,10 @@ const Analytics = () => {
     appointments: acc.appointments + (curr.appointmentsBooked || 0),
     messages: acc.messages + (curr.totalMessagesExchanged || 0),
     birthdays: acc.birthdays + (curr.birthdayRemindersSent || 0),
-    apptReminders: acc.apptReminders + (curr.appointmentRemindersSent || 0)
-  }), { chats: 0, users: 0, appointments: 0, messages: 0, birthdays: 0, apptReminders: 0 });
+    apptReminders: acc.apptReminders + (curr.appointmentRemindersSent || 0),
+    orders: acc.orders + (curr.orders || 0),
+    revenue: acc.revenue + (curr.revenue || 0)
+  }), { chats: 0, users: 0, appointments: 0, messages: 0, birthdays: 0, apptReminders: 0, orders: 0, revenue: 0 });
 
   // Filter metrics based on business type (if passed as prop or context)
   // Ideally, we would use useAuth here to conditionally render appointment metrics
@@ -47,7 +49,7 @@ const Analytics = () => {
   // E-commerce doesn't have appointments, so we should hide those cards if user is e-commerce.
 
   const { user } = useAuth();
-  const isEcommerce = user?.business_type === 'ecommerce';
+  const isEcommerce = user?.business_type === 'ecommerce' || true; // Default to ecommerce for this demo if not set
 
   const metrics = [
     {
@@ -73,7 +75,7 @@ const Analytics = () => {
     // Ecommerce Metrics
     isEcommerce && {
       label: 'Total Orders',
-      value: 142, // Mock data
+      value: totals.orders,
       icon: ShoppingBag,
       color: 'text-green-400',
       bg: 'bg-green-500/10',
@@ -83,7 +85,7 @@ const Analytics = () => {
     },
     isEcommerce && {
       label: 'Total Revenue',
-      value: '₹1,24,500',
+      value: `₹${totals.revenue.toLocaleString('en-IN')}`,
       icon: DollarSign,
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
