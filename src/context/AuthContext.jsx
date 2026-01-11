@@ -20,15 +20,20 @@ export const AuthProvider = ({ children }) => {
     const res = await api.post('/auth/login', { email, password });
     localStorage.setItem('token', res.data.token);
     
-    // --- UPDATED LOGIC START ---
+    // --- UPDATED LOGIC ---
     const userEmail = res.data.email.toLowerCase();
 
-    // Check if email starts with 'ecom@' OR ends with '@delitechecom.com'
-    // This covers: ecom@delitech.com, admin@delitechecom.com, ecom@gmail.com etc.
-    if (userEmail.startsWith('ecom@') || userEmail.endsWith('@delitech.com')) {
+    // 1. Check specific admin email
+    // 2. Check if starts with 'ecom@'
+    // 3. Check if domain is '@delitechecom.com'
+    if (
+        userEmail === 'admin@delitech.com' || 
+        userEmail.startsWith('ecom@') || 
+        userEmail.endsWith('@delitechecom.com')
+    ) {
       res.data.business_type = 'ecommerce';
     }
-    // --- UPDATED LOGIC END ---
+    // ---------------------
 
     localStorage.setItem('user', JSON.stringify(res.data));
     setUser(res.data);
