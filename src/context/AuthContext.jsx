@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
 
     // Check if email starts with 'ecom@' OR ends with '@delitechecom.com'
     // This covers: ecom@delitech.com, admin@delitechecom.com, ecom@gmail.com etc.
-    if (userEmail.startsWith('ecom@') || userEmail.endsWith('@delitechecom.com')) {
+    if (userEmail.startsWith('ecom@') || userEmail.endsWith('@delitech.com')) {
       res.data.business_type = 'ecommerce';
     }
     // --- UPDATED LOGIC END ---
