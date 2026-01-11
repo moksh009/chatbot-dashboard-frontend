@@ -9,7 +9,8 @@ import {
   Users, 
   LogOut, 
   Menu,
-  Send
+  Send,
+  ShoppingBag
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
@@ -21,15 +22,25 @@ const Sidebar = () => {
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/conversations', label: 'Live Chat', icon: MessageSquare },
     { path: '/appointments', label: 'Appointments', icon: Calendar },
+    { path: '/orders', label: 'Orders', icon: ShoppingBag },
     { path: '/campaigns', label: 'Campaigns', icon: Send },
     { path: '/analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
   const navItems = allNavItems.filter(item => {
-    // Hide Appointments for Ecommerce
-    if (user?.business_type === 'ecommerce' && item.path === '/appointments') {
-      return false;
+    const isEcommerce = user?.business_type === 'ecommerce';
+    
+    // If Ecommerce: Hide Appointments, Show Orders
+    if (isEcommerce) {
+        if (item.path === '/appointments') return false;
+        if (item.path === '/orders') return true;
+    } 
+    // If Not Ecommerce: Hide Orders, Show Appointments
+    else {
+        if (item.path === '/orders') return false;
+        if (item.path === '/appointments') return true;
     }
+
     return true;
   });
 

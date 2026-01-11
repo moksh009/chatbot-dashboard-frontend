@@ -6,6 +6,7 @@ import DashboardHome from './DashboardHome';
 import EcommerceDashboard from './EcommerceDashboard';
 import LiveChat from './LiveChat';
 import Appointments from './Appointments';
+import Orders from './Orders';
 import Analytics from './Analytics';
 import CampaignManager from './CampaignManager';
 import PageTransition from '../components/ui/PageTransition';
@@ -38,7 +39,7 @@ const Dashboard = () => {
             <Routes location={location} key={location.pathname}>
               <Route path="/" element={
                 <PageTransition>
-                  <DashboardHome />
+                  {user?.business_type === 'ecommerce' ? <EcommerceDashboard /> : <DashboardHome />}
                 </PageTransition>
               } />
               <Route path="/conversations" element={
@@ -49,6 +50,11 @@ const Dashboard = () => {
               <Route path="/appointments" element={
                 <PageTransition>
                   <Appointments />
+                </PageTransition>
+              } />
+              <Route path="/orders" element={
+                <PageTransition>
+                  <Orders />
                 </PageTransition>
               } />
               <Route path="/campaigns" element={

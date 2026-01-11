@@ -19,6 +19,12 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
     localStorage.setItem('token', res.data.token);
+    
+    // Hack for admin@ecommerce.com to see ecommerce dashboard
+    if (res.data.email === 'admin@ecommerce.com') {
+      res.data.business_type = 'ecommerce';
+    }
+
     localStorage.setItem('user', JSON.stringify(res.data));
     setUser(res.data);
     return res.data;

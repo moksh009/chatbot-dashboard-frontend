@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
-import { Users, MessageSquare, Calendar, TrendingUp, ArrowUp, ArrowDown, Clock } from 'lucide-react';
+import { Users, MessageSquare, Calendar, TrendingUp, ArrowUp, ArrowDown, Clock, ShoppingBag, DollarSign } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Skeleton from '../components/ui/Skeleton';
 import clsx from 'clsx';
+import { useAuth } from '../context/AuthContext';
 
 const Analytics = () => {
   const [stats, setStats] = useState([]);
@@ -45,7 +46,7 @@ const Analytics = () => {
   // The user requested Analytics page to work properly for e-commerce.
   // E-commerce doesn't have appointments, so we should hide those cards if user is e-commerce.
 
-  const { user } = useAuth(); // Need to import useAuth
+  const { user } = useAuth();
   const isEcommerce = user?.business_type === 'ecommerce';
 
   const metrics = [
@@ -69,7 +70,28 @@ const Analytics = () => {
       trend: '+8.2%',
       trendUp: true
     },
-    // Conditionally show Appointments
+    // Ecommerce Metrics
+    isEcommerce && {
+      label: 'Total Orders',
+      value: 142, // Mock data
+      icon: ShoppingBag,
+      color: 'text-green-400',
+      bg: 'bg-green-500/10',
+      border: 'border-green-500/20',
+      trend: '+15.2%',
+      trendUp: true
+    },
+    isEcommerce && {
+      label: 'Total Revenue',
+      value: '₹1,24,500',
+      icon: DollarSign,
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
+      border: 'border-emerald-500/20',
+      trend: '+12.1%',
+      trendUp: true
+    },
+    // Service Metrics
     !isEcommerce && {
       label: 'Appointments',
       value: totals.appointments,
@@ -111,7 +133,7 @@ const Analytics = () => {
       trend: '+0.0%',
       trendUp: true
     }
-  ].filter(Boolean); // Remove false entries
+  ].filter(Boolean);
 
   const container = {
     hidden: { opacity: 0 },
