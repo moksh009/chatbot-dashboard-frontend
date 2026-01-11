@@ -39,8 +39,9 @@ const Analytics = () => {
     birthdays: acc.birthdays + (curr.birthdayRemindersSent || 0),
     apptReminders: acc.apptReminders + (curr.appointmentRemindersSent || 0),
     orders: acc.orders + (curr.orders || 0),
-    revenue: acc.revenue + (curr.revenue || 0)
-  }), { chats: 0, users: 0, appointments: 0, messages: 0, birthdays: 0, apptReminders: 0, orders: 0, revenue: 0 });
+    revenue: acc.revenue + (curr.revenue || 0),
+    addToCarts: acc.addToCarts + (curr.addToCarts || 0)
+  }), { chats: 0, users: 0, appointments: 0, messages: 0, birthdays: 0, apptReminders: 0, orders: 0, revenue: 0, addToCarts: 0 });
 
   // Filter metrics based on business type (if passed as prop or context)
   // Ideally, we would use useAuth here to conditionally render appointment metrics
@@ -73,6 +74,16 @@ const Analytics = () => {
       trendUp: true
     },
     // Ecommerce Metrics
+    isEcommerce && {
+      label: 'Add to Carts',
+      value: totals.addToCarts || 0,
+      icon: ShoppingBag,
+      color: 'text-orange-400',
+      bg: 'bg-orange-500/10',
+      border: 'border-orange-500/20',
+      trend: '+0.0%',
+      trendUp: true
+    },
     isEcommerce && {
       label: 'Total Orders',
       value: totals.orders,

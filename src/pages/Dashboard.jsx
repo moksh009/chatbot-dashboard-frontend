@@ -8,6 +8,7 @@ import LiveChat from './LiveChat';
 import Appointments from './Appointments';
 import Orders from './Orders';
 import Analytics from './Analytics';
+import LeadDetails from './LeadDetails';
 import CampaignManager from './CampaignManager';
 import PageTransition from '../components/ui/PageTransition';
 import { Search } from 'lucide-react';
@@ -65,6 +66,11 @@ const Dashboard = () => {
               <Route path="/analytics" element={
                 <PageTransition>
                   <Analytics />
+                </PageTransition>
+              } />
+              <Route path="/leads/:id" element={
+                <PageTransition>
+                  <LeadDetails />
                 </PageTransition>
               } />
             </Routes>

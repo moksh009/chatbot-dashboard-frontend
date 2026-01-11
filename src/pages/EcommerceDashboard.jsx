@@ -19,7 +19,8 @@ const EcommerceDashboard = () => {
     leads: { total: 0, newToday: 0 },
     orders: { count: 0, revenue: 0 },
     linkClicks: 0,
-    agentRequests: 0
+    agentRequests: 0,
+    addToCarts: 0
   });
   const [recentLeads, setRecentLeads] = useState([]);
 
@@ -74,6 +75,9 @@ const EcommerceDashboard = () => {
     newSocket.on('stats_update', (data) => {
       if (data.type === 'link_click') {
         setStats(prev => ({ ...prev, linkClicks: prev.linkClicks + 1 }));
+        fetchRealtimeStats();
+      } else if (data.type === 'add_to_cart') {
+        setStats(prev => ({ ...prev, addToCarts: prev.addToCarts + 1 }));
         fetchRealtimeStats();
       } else if (data.type === 'agent_request') {
         setStats(prev => ({ ...prev, agentRequests: prev.agentRequests + 1 }));
@@ -201,11 +205,24 @@ const EcommerceDashboard = () => {
             </Card>
         </motion.div>
 
-        {/* AGENT REQUESTS */}
+        {/* ADD TO CARTS */}
         <motion.div variants={item}>
             <Card className="relative overflow-hidden group hover:border-orange-500/50 transition-colors">
                 <div className="flex justify-between items-start mb-4">
                     <div className="p-3 bg-orange-500/10 rounded-xl text-orange-400 group-hover:bg-orange-500/20 transition-colors">
+                        <ShoppingBag size={24} />
+                    </div>
+                </div>
+                <h3 className="text-slate-400 text-sm font-medium">Added to Cart</h3>
+                <p className="text-2xl font-bold text-white mt-1">{stats.addToCarts}</p>
+            </Card>
+        </motion.div>
+
+        {/* AGENT REQUESTS */}
+        <motion.div variants={item}>
+            <Card className="relative overflow-hidden group hover:border-red-500/50 transition-colors">
+                <div className="flex justify-between items-start mb-4">
+                    <div className="p-3 bg-red-500/10 rounded-xl text-red-400 group-hover:bg-red-500/20 transition-colors">
                         <Phone size={24} />
                     </div>
                 </div>
@@ -242,31 +259,33 @@ const EcommerceDashboard = () => {
                      <p className="text-slate-500 text-sm">No leads active yet.</p>
                  ) : (
                      recentLeads.map((lead) => (
-                        <div key={lead._id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center">
-                                    <MessageCircle size={20} className="text-slate-400" />
-                                </div>
-                                <div>
-                                    <h4 className="font-medium text-white">{lead.phoneNumber}</h4>
-                                    <p className="text-sm text-slate-400 truncate max-w-[200px]">
-                                        {lead.chatSummary || 'Started conversation'}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${lead.linkClicks > 0 ? 'bg-green-500/10 text-green-400' : 'bg-slate-700 text-slate-400'}`}>
-                                    {lead.linkClicks > 0 ? `${lead.linkClicks} Clicks` : 'Browsing'}
-                                </span>
-                                <p className="text-xs text-slate-500 mt-1">
-                                    {new Date(lead.lastInteraction).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}
-                                </p>
-                            </div>
-                        </div>
-                     ))
-                 )}
-            </div>
-        </Card>
+                         <div key={lead._id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
+                             <div className="flex items-center gap-4">
+                                 <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center">
+                                     <MessageCircle size={20} className="text-slate-400" />
+                                 </div>
+                                 <div>
+                                     <Link to={`/leads/${lead._id}`} className="font-medium text-white hover:text-blue-400 hover:underline">
+                                        {lead.phoneNumber}
+                                     </Link>
+                                     <p className="text-sm text-slate-400 truncate max-w-[200px]">
+                                         {lead.chatSummary || 'Started conversation'}
+                                     </p>
+                                 </div>
+                             </div>
+                             <div className="text-right">
+                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${lead.linkClicks > 0 ? 'bg-green-500/10 text-green-400' : 'bg-slate-700 text-slate-400'}`}>
+                                     {lead.linkClicks > 0 ? `${lead.linkClicks} Clicks` : 'Browsing'}
+                                 </span>
+                                 <p className="text-xs text-slate-500 mt-1">
+                                     {new Date(lead.lastInteraction).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}
+                                 </p>
+                             </div>
+                         </div>
+                      ))
+                  )}
+             </div>
+         </Card>
 
          <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
