@@ -341,7 +341,9 @@ const Analytics = () => {
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Date</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Chats</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Users</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Appointments</th>
+                      {!isEcommerce && <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Appointments</th>}
+                      {isEcommerce && <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Orders</th>}
+                      {isEcommerce && <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Revenue</th>}
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Messages</th>
                     </tr>
                   </thead>
@@ -351,14 +353,26 @@ const Analytics = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300 font-medium">{stat.date}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{stat.totalChats}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{stat.uniqueUsers}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
-                          <span className={clsx(
-                            "px-2 py-0.5 rounded-full text-xs font-medium",
-                            stat.appointmentsBooked > 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-500"
-                          )}>
-                            {stat.appointmentsBooked}
-                          </span>
-                        </td>
+                        {!isEcommerce && (
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                            <span className={clsx(
+                              "px-2 py-0.5 rounded-full text-xs font-medium",
+                              stat.appointmentsBooked > 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-500"
+                            )}>
+                              {stat.appointmentsBooked}
+                            </span>
+                          </td>
+                        )}
+                        {isEcommerce && (
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                            {stat.orders || 0}
+                          </td>
+                        )}
+                        {isEcommerce && (
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                            ₹{(stat.revenue || 0).toLocaleString()}
+                          </td>
+                        )}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{stat.totalMessagesExchanged}</td>
                       </tr>
                     ))}

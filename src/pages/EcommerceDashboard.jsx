@@ -52,9 +52,23 @@ const EcommerceDashboard = () => {
   useEffect(() => {
     fetchDashboardData();
 
+    // Polling as backup for real-time updates (every 30 seconds)
+    const intervalId = setInterval(() => {
+        fetchRealtimeStats();
+        // Also fetch leads to ensure list is up to date
+        api.get('/analytics/leads?limit=5').then(res => {
+            setRecentLeads(res.data.leads);
+        }).catch(err => console.error("Background lead fetch failed", err));
+    }, 30000);
+
     // --- REAL-TIME SOCKET CONNECTION ---
+    // If user is on default dev ID, connect to Delitech room to see bot activity
+    const socketClientId = (user?.clientId === 'code_clinic_v1' || !user?.clientId) 
+        ? 'delitech_smarthomes' 
+        : user.clientId;
+
     const newSocket = io(SOCKET_URL, {
-      query: { clientId: user?.clientId || 'delitech_smarthomes' }
+      query: { clientId: socketClientId }
     });
 
     newSocket.on('stats_update', (data) => {
@@ -75,7 +89,10 @@ const EcommerceDashboard = () => {
       }
     });
 
-    return () => newSocket.disconnect();
+    return () => {
+        newSocket.disconnect();
+        clearInterval(intervalId);
+    };
   }, [user]);
 
   const getTimeGreeting = () => {
