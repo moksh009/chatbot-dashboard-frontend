@@ -20,10 +20,15 @@ export const AuthProvider = ({ children }) => {
     const res = await api.post('/auth/login', { email, password });
     localStorage.setItem('token', res.data.token);
     
-    // Hack for admin@ecommerce.com to see ecommerce dashboard
-    if (res.data.email === 'admin@ecommerce.com') {
+    // --- UPDATED LOGIC START ---
+    const userEmail = res.data.email.toLowerCase();
+
+    // Check if email starts with 'ecom@' OR ends with '@delitechecom.com'
+    // This covers: ecom@delitech.com, admin@delitechecom.com, ecom@gmail.com etc.
+    if (userEmail.startsWith('ecom@') || userEmail.endsWith('@delitechecom.com')) {
       res.data.business_type = 'ecommerce';
     }
+    // --- UPDATED LOGIC END ---
 
     localStorage.setItem('user', JSON.stringify(res.data));
     setUser(res.data);
