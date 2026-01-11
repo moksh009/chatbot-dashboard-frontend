@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
     if (
         userEmail === 'admin@delitech.com' || 
         userEmail.startsWith('ecom@') || 
-        userEmail.endsWith('@delitechecom.com')
+        userEmail.endsWith('@ecom.com')
     ) {
       res.data.business_type = 'ecommerce';
     }

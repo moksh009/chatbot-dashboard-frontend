@@ -1,43 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
-import { ShoppingBag, Clock, User, DollarSign, Trash2, Search, Filter, AlertCircle, Package } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ShoppingBag, User, DollarSign, Search, Filter, Package } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import Modal from '../components/ui/Modal';
 import Skeleton from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
+import io from 'socket.io-client';
+
+const SOCKET_URL = 'http://localhost:3000'; // Match backend
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState(null);
 
   useEffect(() => {
     fetchOrders();
+
+    // Real-time socket listener
+    const newSocket = io(SOCKET_URL, { query: { clientId: 'delitech_smarthomes' } });
+    newSocket.on('new_order', (newOrder) => {
+        setOrders(prev => [newOrder, ...prev]);
+    });
+
+    return () => newSocket.disconnect();
   }, []);
 
   const fetchOrders = async () => {
     try {
-      // Try to fetch from API, fallback to mock if fails
-      // const res = await api.get('/orders');
-      // setOrders(res.data);
-      
-      // Mock data for now as backend might not be ready
-      setTimeout(() => {
-        setOrders([
-            { _id: '1', orderId: '#ORD-001', customer: 'John Doe', amount: 1200, status: 'completed', date: new Date().toISOString(), items: 3 },
-            { _id: '2', orderId: '#ORD-002', customer: 'Jane Smith', amount: 850, status: 'pending', date: new Date().toISOString(), items: 1 },
-            { _id: '3', orderId: '#ORD-003', customer: 'Alice Johnson', amount: 2300, status: 'shipped', date: new Date(Date.now() - 86400000).toISOString(), items: 5 },
-        ]);
-        setLoading(false);
-      }, 1000);
-
+      const res = await api.get('/client/0002/orders');
+      setOrders(res.data);
+      setLoading(false);
     } catch (err) {
       console.error('Error fetching orders:', err);
       setLoading(false);
@@ -45,18 +42,13 @@ const Orders = () => {
   };
 
   const filteredOrders = orders.filter(order => 
-    order.customer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.orderId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const container = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05
-      }
-    }
+    show: { opacity: 1, transition: { staggerChildren: 0.05 } }
   };
 
   const item = {
@@ -65,11 +57,11 @@ const Orders = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
+      case 'paid': return 'success'; // Green
       case 'completed': return 'success';
       case 'pending': return 'warning';
       case 'shipped': return 'info';
-      case 'cancelled': return 'error';
       default: return 'default';
     }
   };
@@ -79,7 +71,7 @@ const Orders = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-white">Orders</h2>
-          <p className="text-slate-400">Manage your store orders</p>
+          <p className="text-slate-400">Real-time order feed</p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="w-full md:w-64">
@@ -99,13 +91,7 @@ const Orders = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="h-48">
-              <div className="flex justify-between items-start mb-4">
-                <Skeleton className="w-12 h-12 rounded-full" />
-                <Skeleton className="w-20 h-6 rounded-full" />
-              </div>
-              <Skeleton className="w-3/4 h-6 mb-2" />
-              <Skeleton className="w-1/2 h-4 mb-4" />
-              <Skeleton className="w-full h-10 rounded-lg" />
+                <Skeleton className="w-full h-full" />
             </Card>
           ))}
         </div>
@@ -132,7 +118,7 @@ const Orders = () => {
                     </div>
                     <div>
                       <h3 className="font-bold text-white">{order.orderId}</h3>
-                      <p className="text-xs text-slate-500">{format(new Date(order.date), 'MMM d, yyyy')}</p>
+                      <p className="text-xs text-slate-500">{format(new Date(order.createdAt), 'MMM d, yyyy')}</p>
                     </div>
                   </div>
                   <Badge variant={getStatusColor(order.status)}>{order.status}</Badge>
@@ -141,15 +127,15 @@ const Orders = () => {
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center gap-2 text-sm text-slate-300">
                     <User size={16} className="text-slate-500" />
-                    <span>{order.customer}</span>
+                    <span>{order.customerName}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-slate-300">
                     <ShoppingBag size={16} className="text-slate-500" />
-                    <span>{order.items} items</span>
+                    <span>{order.items?.length || 0} items</span>
                   </div>
                    <div className="flex items-center gap-2 text-sm text-slate-300">
                     <DollarSign size={16} className="text-slate-500" />
-                    <span>₹{order.amount.toLocaleString()}</span>
+                    <span className="font-bold text-emerald-400">₹{order.amount.toLocaleString()}</span>
                   </div>
                 </div>
 

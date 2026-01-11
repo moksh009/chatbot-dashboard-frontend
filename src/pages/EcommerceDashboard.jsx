@@ -6,6 +6,11 @@ import Button from '../components/ui/Button';
 import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import api from '../api/axios'; // Ensure this points to your backend
+import io from 'socket.io-client';
+
+// Define socket URL based on your environment
+const SOCKET_URL = 'http://localhost:3000'; // Change to your production URL
 
 const EcommerceDashboard = () => {
   const { user } = useAuth();
@@ -16,20 +21,48 @@ const EcommerceDashboard = () => {
     abandonedCarts: 0,
     conversionRate: 0
   });
+  const [recentOrders, setRecentOrders] = useState([]);
+
+  const fetchDashboardData = async () => {
+    try {
+      // 1. Get Stats
+      // Note: Adjust URL based on how you mounted the route in index.js
+      // If mounted as /api/client/0002, use that.
+      const statsRes = await api.get('/client/0002/stats'); 
+      setStats(statsRes.data);
+
+      // 2. Get Recent Orders (Limit 3 for dashboard)
+      const ordersRes = await api.get('/client/0002/orders');
+      setRecentOrders(ordersRes.data.slice(0, 3));
+      
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to load dashboard data", err);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Simulate fetching ecommerce data
-    const timer = setTimeout(() => {
-      setStats({
-        totalRevenue: 124500,
-        orders: 142,
-        abandonedCarts: 24,
-        conversionRate: 3.2
-      });
-      setLoading(false);
-    }, 1000);
+    fetchDashboardData();
 
-    return () => clearTimeout(timer);
+    // --- REAL-TIME SOCKET CONNECTION ---
+    const newSocket = io(SOCKET_URL, {
+      query: { clientId: 'delitech_smarthomes' } // Must match backend room
+    });
+
+    // Listen for real-time order updates
+    newSocket.on('new_order', (newOrder) => {
+      // Update stats instantly without refresh
+      setStats(prev => ({
+        ...prev,
+        orders: prev.orders + 1,
+        totalRevenue: prev.totalRevenue + newOrder.amount
+      }));
+      // Add new order to recent list
+      setRecentOrders(prev => [newOrder, ...prev].slice(0, 3));
+    });
+
+    return () => newSocket.disconnect();
   }, []);
 
   const getTimeGreeting = () => {
@@ -41,10 +74,7 @@ const EcommerceDashboard = () => {
 
   const container = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
   };
 
   const item = {
@@ -92,14 +122,16 @@ const EcommerceDashboard = () => {
         animate="show"
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
+        {/* REVENUE */}
         <motion.div variants={item}>
             <Card className="relative overflow-hidden group hover:border-blue-500/50 transition-colors">
                 <div className="flex justify-between items-start mb-4">
                     <div className="p-3 bg-green-500/10 rounded-xl text-green-400 group-hover:bg-green-500/20 transition-colors">
                         <DollarSign size={24} />
                     </div>
+                    {/* Placeholder trend logic */}
                     <span className="flex items-center text-xs font-medium text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
-                        +12% <TrendingUp size={12} className="ml-1" />
+                        Live <TrendingUp size={12} className="ml-1" />
                     </span>
                 </div>
                 <h3 className="text-slate-400 text-sm font-medium">Total Revenue</h3>
@@ -107,6 +139,7 @@ const EcommerceDashboard = () => {
             </Card>
         </motion.div>
 
+        {/* ORDERS */}
         <motion.div variants={item}>
             <Card className="relative overflow-hidden group hover:border-blue-500/50 transition-colors">
                 <div className="flex justify-between items-start mb-4">
@@ -119,21 +152,20 @@ const EcommerceDashboard = () => {
             </Card>
         </motion.div>
 
+        {/* ABANDONED */}
         <motion.div variants={item}>
             <Card className="relative overflow-hidden group hover:border-blue-500/50 transition-colors">
                 <div className="flex justify-between items-start mb-4">
                     <div className="p-3 bg-orange-500/10 rounded-xl text-orange-400 group-hover:bg-orange-500/20 transition-colors">
                         <ShoppingCart size={24} />
                     </div>
-                     <span className="flex items-center text-xs font-medium text-red-400 bg-red-500/10 px-2 py-1 rounded-full">
-                        Needs Action
-                    </span>
                 </div>
-                <h3 className="text-slate-400 text-sm font-medium">Abandoned Carts</h3>
+                <h3 className="text-slate-400 text-sm font-medium">Potential Leads</h3>
                 <p className="text-2xl font-bold text-white mt-1">{stats.abandonedCarts}</p>
             </Card>
         </motion.div>
 
+        {/* CONVERSION */}
         <motion.div variants={item}>
             <Card className="relative overflow-hidden group hover:border-blue-500/50 transition-colors">
                 <div className="flex justify-between items-start mb-4">
@@ -147,35 +179,43 @@ const EcommerceDashboard = () => {
         </motion.div>
       </motion.div>
 
-      {/* Recent Orders / Activity Section */}
+      {/* Recent Orders Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold text-white">Recent Orders</h2>
-                <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300">
-                    View All <ArrowRight size={16} className="ml-2" />
-                </Button>
+                <Link to="/orders">
+                    <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300">
+                        View All <ArrowRight size={16} className="ml-2" />
+                    </Button>
+                </Link>
             </div>
             <div className="space-y-4">
-                 {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center">
-                                <ShoppingBag size={20} className="text-slate-400" />
+                 {recentOrders.length === 0 ? (
+                     <p className="text-slate-500 text-sm">No orders yet.</p>
+                 ) : (
+                     recentOrders.map((order) => (
+                        <div key={order._id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center">
+                                    <ShoppingBag size={20} className="text-slate-400" />
+                                </div>
+                                <div>
+                                    <h4 className="font-medium text-white">Order {order.orderId}</h4>
+                                    <p className="text-sm text-slate-400">{order.items?.length || 1} items • ₹{order.amount}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 className="font-medium text-white">Order #102{i}</h4>
-                                <p className="text-sm text-slate-400">2 items • ₹2,400</p>
+                            <div className="text-right">
+                                <span className="px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-medium capitalize">
+                                    {order.status}
+                                </span>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}
+                                </p>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <span className="px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-medium">
-                                Paid
-                            </span>
-                            <p className="text-xs text-slate-500 mt-1">Just now</p>
-                        </div>
-                    </div>
-                 ))}
+                     ))
+                 )}
             </div>
         </Card>
 
@@ -184,22 +224,8 @@ const EcommerceDashboard = () => {
                 <h2 className="text-lg font-bold text-white">Abandoned Carts Recovery</h2>
             </div>
              <div className="space-y-4">
-                 {[1, 2].map((i) => (
-                    <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
-                        <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                                <ShoppingCart size={20} className="text-orange-400" />
-                            </div>
-                            <div>
-                                <h4 className="font-medium text-white">Pending Recovery</h4>
-                                <p className="text-sm text-slate-400">User ending in **88</p>
-                            </div>
-                        </div>
-                         <Button size="sm" className="bg-green-600 hover:bg-green-500">
-                             Send WhatsApp
-                         </Button>
-                    </div>
-                 ))}
+                 {/* This would come from AdLeads that haven't ordered yet */}
+                 <p className="text-slate-500 text-sm">Recovery module coming soon...</p>
             </div>
         </Card>
       </div>
