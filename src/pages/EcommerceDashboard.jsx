@@ -196,7 +196,7 @@ const EcommerceDashboard = () => {
       >
         {/* Total Leads */}
         <motion.div variants={item}>
-            <Link to="/analytics">
+            <Link to="/leads">    
                 <Card className="relative overflow-hidden group hover:border-blue-500/30 transition-all cursor-pointer h-full">
                     <div className="flex justify-between items-start mb-3 md:mb-4">
                         <div className="p-2 md:p-3 bg-blue-500/10 rounded-xl text-blue-400 group-hover:bg-blue-500/20 transition-colors">
@@ -264,7 +264,7 @@ const EcommerceDashboard = () => {
                     <h2 className="text-lg font-bold text-white">Live Activity</h2>
                     <p className="text-xs text-slate-400 mt-0.5">Recent bot interactions</p>
                 </div>
-                <Link to="/analytics">
+                <Link to="/leads">
                     <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10">
                         View All <ArrowRight size={16} className="ml-1.5" />
                     </Button>
