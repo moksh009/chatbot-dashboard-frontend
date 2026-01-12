@@ -20,7 +20,7 @@ const Dashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30">
-      <Sidebar />
+      
       
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-0">
         {/* Floating Top Bar */}

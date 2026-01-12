@@ -13,7 +13,9 @@ import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import io from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:3000'; // Match your backend URL
+const SOCKET_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://topedgeaidash.netlify.app' 
+  : 'http://localhost:3000';
 
 const EcommerceDashboard = () => {
   const { user } = useAuth();
