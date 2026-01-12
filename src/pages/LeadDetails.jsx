@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../api';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { 
   User, Phone, Calendar, ShoppingCart, CreditCard, 
@@ -22,7 +22,9 @@ const LeadDetails = () => {
 
   const fetchLeadDetails = async () => {
     try {
-      const response = await api.get(`/analytics/lead/${id}`);
+      const response = await axios.get(`http://localhost:4000/api/analytics/lead/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setData(response.data);
     } catch (error) {
       console.error('Error fetching lead details:', error);
